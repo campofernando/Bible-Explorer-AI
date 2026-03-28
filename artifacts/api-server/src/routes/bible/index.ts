@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const BIBLE_API_BASE = "https://api.scripture.api.bible/v1";
+const BIBLE_API_BASE = "https://rest.api.bible";
 
 function getBibleApiKey(): string {
   return process.env.BIBLE_API_KEY ?? "";
