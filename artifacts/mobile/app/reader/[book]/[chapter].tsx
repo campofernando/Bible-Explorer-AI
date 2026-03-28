@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ScrollView,
   Modal,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -18,9 +19,14 @@ import * as Haptics from "expo-haptics";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
-import { BIBLE_BOOKS, getBibleText, BibleVerse } from "@/constants/bible";
+import { BIBLE_BOOKS, BibleVerse } from "@/constants/bible";
 import { useBookmarks } from "@/context/BookmarksContext";
+import { useTranslation } from "@/context/TranslationContext";
+import { useBibleChapter } from "@/hooks/useBibleChapter";
+import { TranslationPicker } from "@/components/TranslationPicker";
 import { createOpenaiConversation } from "@workspace/api-client-react";
+
+const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 
 type ContextMenuState = { visible: boolean; verse: BibleVerse | null };
 
@@ -35,10 +41,18 @@ export default function ReaderScreen() {
   }>();
   const chapter = parseInt(chapterStr ?? "1", 10);
   const bookInfo = BIBLE_BOOKS.find((b) => b.id === bookId);
-  const verses = getBibleText(bookId ?? "", chapter);
   const { addBookmark, isBookmarked } = useBookmarks();
+  const { translation } = useTranslation();
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({ visible: false, verse: null });
+  const [translationPickerVisible, setTranslationPickerVisible] = useState(false);
   const queryClient = useQueryClient();
+
+  const { verses, loading, source } = useBibleChapter(
+    bookId ?? "",
+    chapter,
+    translation.id,
+    API_BASE
+  );
 
   const createConvMutation = useMutation({
     mutationFn: createOpenaiConversation,
@@ -69,7 +83,6 @@ export default function ReaderScreen() {
   const handleAskAI = useCallback(() => {
     if (!contextMenu.verse || !bookInfo) return;
     const title = `${bookInfo.name} ${chapter}:${contextMenu.verse.verse}`;
-    const verseText = contextMenu.verse.text;
     setContextMenu({ visible: false, verse: null });
     createConvMutation.mutate({ title });
   }, [contextMenu.verse, bookInfo, chapter, createConvMutation]);
@@ -106,6 +119,18 @@ export default function ReaderScreen() {
             Chapter {chapter}
           </Text>
         </View>
+
+        <TouchableOpacity
+          style={[styles.translationBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => setTranslationPickerVisible(true)}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.translationBtnText, { color: colors.tint, fontFamily: "Inter_700Bold" }]}>
+            {translation.abbreviationLocal ?? translation.abbreviation}
+          </Text>
+          <Feather name="chevron-down" size={12} color={colors.textMuted} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.aiBtn, { backgroundColor: colors.tint }]}
           onPress={() => {
@@ -119,42 +144,56 @@ export default function ReaderScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={verses}
-        keyExtractor={(item) => String(item.verse)}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: bottomPad + 100 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
-          const bookmarked = isBookmarked(bookId ?? "", chapter, item.verse);
-          return (
-            <TouchableOpacity
-              onLongPress={() => handleVerseLongPress(item)}
-              activeOpacity={0.85}
-              style={styles.verseRow}
-            >
-              <Text style={[styles.verseNum, { color: colors.tint, fontFamily: "Inter_600SemiBold" }]}>
-                {item.verse}
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={colors.tint} size="large" />
+          <Text style={[styles.loadingText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
+            Loading {translation.abbreviationLocal ?? translation.abbreviation}...
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={verses}
+          keyExtractor={(item) => String(item.verse)}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: bottomPad + 100 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const bookmarked = isBookmarked(bookId ?? "", chapter, item.verse);
+            return (
+              <TouchableOpacity
+                onLongPress={() => handleVerseLongPress(item)}
+                activeOpacity={0.85}
+                style={styles.verseRow}
+              >
+                <Text style={[styles.verseNum, { color: colors.tint, fontFamily: "Inter_600SemiBold" }]}>
+                  {item.verse}
+                </Text>
+                <Text style={[styles.verseText, { color: colors.text, fontFamily: "Inter_400Regular" }]}>
+                  {item.text}
+                  {bookmarked && (
+                    <Text style={{ color: Colors.accent }}> ●</Text>
+                  )}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+          ListHeaderComponent={
+            <View style={styles.chapterHeader}>
+              <Text style={[styles.chapterNum, { color: colors.textMuted, fontFamily: "Inter_700Bold" }]}>
+                {chapter}
               </Text>
-              <Text style={[styles.verseText, { color: colors.text, fontFamily: "Inter_400Regular" }]}>
-                {item.text}
-                {bookmarked && (
-                  <Text style={{ color: Colors.accent }}> ●</Text>
-                )}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        ListHeaderComponent={
-          <View style={[styles.chapterHeader]}>
-            <Text style={[styles.chapterNum, { color: colors.textMuted, fontFamily: "Inter_700Bold" }]}>
-              {chapter}
-            </Text>
-          </View>
-        }
-      />
+              {source === "sample" && (
+                <Text style={[styles.sampleNote, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
+                  Sample text · select a translation above for full Bible text
+                </Text>
+              )}
+            </View>
+          }
+        />
+      )}
 
       <View
         style={[
@@ -255,6 +294,12 @@ export default function ReaderScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <TranslationPicker
+        visible={translationPickerVisible}
+        onClose={() => setTranslationPickerVisible(false)}
+        apiBase={API_BASE}
+      />
     </View>
   );
 }
@@ -267,12 +312,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    gap: 12,
+    gap: 8,
   },
   backBtn: { padding: 4 },
   titleWrap: { flex: 1 },
   bookTitle: { fontSize: 18, letterSpacing: -0.3 },
   chapterLabel: { fontSize: 13, marginTop: 2 },
+  translationBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  translationBtnText: { fontSize: 12, letterSpacing: 0.5 },
   aiBtn: {
     width: 36,
     height: 36,
@@ -280,9 +335,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  loadingText: { fontSize: 14 },
   content: { paddingHorizontal: 20, paddingTop: 8 },
-  chapterHeader: { alignItems: "center", paddingVertical: 24 },
+  chapterHeader: { alignItems: "center", paddingVertical: 24, gap: 8 },
   chapterNum: { fontSize: 72, letterSpacing: -4, opacity: 0.15 },
+  sampleNote: { fontSize: 12, textAlign: "center", fontStyle: "italic", opacity: 0.8 },
   verseRow: { flexDirection: "row", gap: 10, marginBottom: 14, alignItems: "flex-start" },
   verseNum: { fontSize: 12, minWidth: 22, marginTop: 3, textAlign: "right" },
   verseText: { flex: 1, fontSize: 18, lineHeight: 30, letterSpacing: -0.2 },

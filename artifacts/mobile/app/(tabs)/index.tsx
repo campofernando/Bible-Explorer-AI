@@ -15,8 +15,11 @@ import { router } from "expo-router";
 
 import Colors from "@/constants/colors";
 import { BIBLE_BOOKS } from "@/constants/bible";
+import { useTranslation } from "@/context/TranslationContext";
+import { TranslationPicker } from "@/components/TranslationPicker";
 
 const TESTAMENT_TABS = ["Old Testament", "New Testament"] as const;
+const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -25,6 +28,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const [testament, setTestament] = useState<"Old Testament" | "New Testament">("Old Testament");
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const { translation } = useTranslation();
 
   const filtered = BIBLE_BOOKS.filter(
     (b) =>
@@ -53,12 +58,26 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <Text style={[styles.appTitle, { color: colors.text, fontFamily: "Inter_700Bold" }]}>
-          Scripture
-        </Text>
-        <Text style={[styles.appSubtitle, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
-          Study with AI
-        </Text>
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={[styles.appTitle, { color: colors.text, fontFamily: "Inter_700Bold" }]}>
+              Scripture
+            </Text>
+            <Text style={[styles.appSubtitle, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
+              Study with AI
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.translationBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setPickerVisible(true)}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.translationAbbr, { color: colors.tint, fontFamily: "Inter_700Bold" }]}>
+              {translation.abbreviationLocal ?? translation.abbreviation}
+            </Text>
+            <Feather name="chevron-down" size={14} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
 
         <View
           style={[
@@ -148,6 +167,12 @@ export default function HomeScreen() {
         scrollEnabled={filtered.length > 0}
         showsVerticalScrollIndicator={false}
       />
+
+      <TranslationPicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        apiBase={API_BASE}
+      />
     </View>
   );
 }
@@ -161,6 +186,12 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
     borderBottomWidth: 1,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
   appTitle: {
     fontSize: 28,
     letterSpacing: -0.5,
@@ -168,7 +199,20 @@ const styles = StyleSheet.create({
   appSubtitle: {
     fontSize: 14,
     marginTop: 2,
-    marginBottom: 16,
+  },
+  translationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  translationAbbr: {
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
   searchBar: {
     flexDirection: "row",
