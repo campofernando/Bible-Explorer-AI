@@ -1,0 +1,20 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "huNplEMtbcTM60tLrQhws"
+uri = "file://README.md"
+type = "text"
+title = "README — How to Run the Application"
+
+[[outputs]]
+id = "6V4wg6P4S8v9QBwQDo3mD"
+uri = "file://docs/FEATURES.md"
+type = "text"
+title = "Features Guide"
+
+[[outputs]]
+id = "MoZwz8ER6IgSvxNVRPABn"
+uri = "file://docs/ARCHITECTURE.md"
+type = "text"
+title = "Architecture & Technical Documentation"
