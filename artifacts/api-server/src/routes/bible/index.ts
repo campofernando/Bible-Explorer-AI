@@ -4,6 +4,25 @@ const router: IRouter = Router();
 
 const BIBLE_API_BASE = "https://rest.api.bible/v1";
 
+// Maps our local book abbreviations (uppercased) to the API's USFM book IDs.
+// Only entries that differ from the simple uppercase are listed here.
+const BOOK_ID_MAP: Record<string, string> = {
+  EZE: "EZK", // Ezekiel
+  JOE: "JOL", // Joel
+  NAH: "NAM", // Nahum
+  MAR: "MRK", // Mark
+  JOH: "JHN", // John
+  PHI: "PHP", // Philippians
+  "1JO": "1JN", // 1 John
+  "2JO": "2JN", // 2 John
+  "3JO": "3JN", // 3 John
+};
+
+function toApiBookId(localId: string): string {
+  const upper = localId.toUpperCase();
+  return BOOK_ID_MAP[upper] ?? upper;
+}
+
 function getBibleApiKey(): string {
   return process.env.BIBLE_API_KEY ?? "";
 }
@@ -63,8 +82,12 @@ router.get("/bibles", async (req, res) => {
 router.get("/bibles/:bibleId/chapters/:chapterId/verses", async (req, res) => {
   try {
     const { bibleId, chapterId } = req.params;
+    // chapterId arrives as e.g. "JOH.3" — remap the book portion to the API's ID
+    const [bookPart, chapterPart] = chapterId.split(".");
+    const apiBookId = toApiBookId(bookPart ?? "");
+    const apiChapterId = `${apiBookId}.${chapterPart}`;
     const data = await bibleApiFetch(
-      `/bibles/${bibleId}/chapters/${chapterId}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false`
+      `/bibles/${bibleId}/chapters/${apiChapterId}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false`
     );
     const content: string = data.data?.content ?? "";
     const verses = parseVerseContent(content);
