@@ -1,15 +1,9 @@
 import { useState, useEffect } from "react";
 import { getBibleText, BibleVerse } from "@/constants/bible";
 
-type ApiBibleVerse = {
-  id: string;
-  orgId: string;
-  bookId: string;
-  chapterId: string;
-  bibleId: string;
-  reference: string;
-  text?: string;
-  content?: string;
+type ApiVerse = {
+  verse: number;
+  text: string;
 };
 
 type State = {
@@ -42,17 +36,9 @@ export function useBibleChapter(
 
     fetch(`${apiBase}/api/bible/bibles/${bibleId}/chapters/${chapterIdForApi}/verses`)
       .then((r) => r.json())
-      .then((data: ApiBibleVerse[] | { error: string }) => {
+      .then((data: ApiVerse[] | { error: string }) => {
         if (Array.isArray(data) && data.length > 0) {
-          const mapped: BibleVerse[] = data.map((v, idx) => {
-            const parts = v.id?.split(".") ?? [];
-            const verseNum = parseInt(parts[parts.length - 1] ?? String(idx + 1), 10);
-            return {
-              verse: isNaN(verseNum) ? idx + 1 : verseNum,
-              text: (v.text ?? v.content ?? "").trim(),
-            };
-          });
-          setState({ verses: mapped, loading: false, error: null, source: "api" });
+          setState({ verses: data, loading: false, error: null, source: "api" });
         } else if (!Array.isArray(data) && data.error) {
           throw new Error(data.error);
         } else {
