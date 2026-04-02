@@ -82,6 +82,23 @@ SESSION_SECRET="your-random-secret-here"
 Push the database schema (creates the required tables):
 
 ```bash
+If you already have PostgreSQL running locally, push the database schema (creates the required tables):
+
+```bash
+pnpm --filter @workspace/db run push
+```
+
+If you don't have Postgres provisioned locally, you can use the included bootstrap helper which creates the configured role and database (reads `DATABASE_URL` from `.env`). On macOS install and start Postgres with Homebrew, then run the bootstrap script and push:
+
+```bash
+# macOS (Homebrew)
+brew install postgresql
+brew services start postgresql
+
+# create role/db from .env and ensure DB exists
+pnpm run bootstrap-db
+
+# apply schema
 pnpm --filter @workspace/db run push
 ```
 
@@ -189,6 +206,7 @@ Press `Ctrl + C` in each terminal window to stop the services.
 |---------|-------------|
 | `pnpm install` | Install all dependencies |
 | `pnpm --filter @workspace/db run push` | Apply database schema changes |
+| `pnpm run bootstrap-db` | Create DB role/database from `.env` (local bootstrap) |
 | `pnpm --filter @workspace/api-spec run codegen` | Regenerate API client code |
 | `pnpm --filter @workspace/api-server run dev` | Start the API server |
 | `pnpm --filter @workspace/mobile run dev` | Start the mobile app |
