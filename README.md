@@ -102,6 +102,20 @@ pnpm run bootstrap-db
 pnpm --filter @workspace/db run push
 ```
 
+Notes:
+
+- Make the bootstrap script executable if you prefer running it directly:
+
+```bash
+chmod +x ./scripts/bootstrap-db.cjs
+```
+
+- To remove the database referenced by your `DATABASE_URL` (useful for cleanup/testing), run:
+
+```bash
+pnpm run drop-db
+```
+
 ### 5. Run code generation
 
 Generate the API client code from the OpenAPI specification:

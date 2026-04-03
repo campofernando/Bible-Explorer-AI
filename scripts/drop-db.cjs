@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const { execSync, execFileSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 function parseEnv() {
   const env = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
@@ -46,23 +46,19 @@ function runPsql(cmd, opts = {}) {
 function main() {
   const databaseUrl = parseEnv();
   const { user, password, host, port, database } = parseDatabaseUrl(databaseUrl);
-  if (!user || !password || !database) {
-    console.error('Parsed DATABASE_URL is missing user, password, or database');
+  if (!database) {
+    console.error('Parsed DATABASE_URL is missing database');
     process.exit(1);
   }
 
   // Set PGPASSWORD so psql can use the password if needed
-  process.env.PGPASSWORD = password;
+  if (password) process.env.PGPASSWORD = password;
 
-  console.log('Creating role if it does not exist:', user);
-  const roleSql = `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${user}') THEN CREATE ROLE "${user}" WITH LOGIN PASSWORD '${password}'; END IF; END $$;`;
-  runPsql(roleSql, { host, port, connectDb: 'postgres' });
+  console.log('Dropping database if it exists:', database);
+  const dropSql = `DROP DATABASE IF EXISTS "${database}";`;
+  runPsql(dropSql, { host, port, connectDb: 'postgres' });
 
-  console.log('Creating database if it does not exist:', database);
-  const dbSql = `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_database WHERE datname='${database}') THEN CREATE DATABASE "${database}" OWNER "${user}"; END IF; END $$;`;
-  runPsql(dbSql, { host, port, connectDb: 'postgres' });
-
-  console.log('Bootstrap complete.');
+  console.log('Done.');
 }
 
 main();
