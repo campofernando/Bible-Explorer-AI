@@ -228,6 +228,29 @@ Press `Ctrl + C` in each terminal window to stop the services.
 
 ---
 
+Environment-aware commands
+
+The repo includes a small wrapper that automatically loads environment variables from `.env` before running `pnpm` workspace commands. Use the `env:*` convenience scripts from the repository root to run common workflows without manually sourcing `.env` each time.
+
+Examples:
+
+```bash
+# Start the API server with .env loaded
+pnpm run env:api-dev
+
+# Start the mobile dev server with .env loaded
+pnpm run env:mobile-dev
+
+# Push DB schema using .env DATABASE_URL
+pnpm run env:db-push
+
+# Run the bootstrap helper using .env
+pnpm run env:bootstrap-db
+```
+
+These scripts call `pnpm` via a thin executable wrapper `pnpm-env` at the repo root, so they behave the same as running `pnpm` but first source `.env`.
+
+
 ## Troubleshooting
 
 **"Cannot connect to database"**

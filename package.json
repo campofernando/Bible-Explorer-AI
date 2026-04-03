@@ -8,6 +8,10 @@
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "bootstrap-db": "node ./scripts/bootstrap-db.cjs",
+    "env:api-dev": "./pnpm-env --filter @workspace/api-server run dev",
+    "env:mobile-dev": "./pnpm-env --filter @workspace/mobile run dev",
+    "env:db-push": "./pnpm-env --filter @workspace/db run push",
+    "env:bootstrap-db": "./pnpm-env run bootstrap-db",
     "drop-db": "node ./scripts/drop-db.cjs"
   },
   "private": true,

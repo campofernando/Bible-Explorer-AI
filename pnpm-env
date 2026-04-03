@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Load .env into environment if present
+if [ -f .env ]; then
+  # shellcheck disable=SC1091
+  set -a
+  # shellcheck source=/dev/null
+  . .env
+  set +a
+fi
+
+if [ $# -eq 0 ]; then
+  echo "Usage: pnpm-env <pnpm-args...>"
+  exit 1
+fi
+
+exec pnpm "$@"
