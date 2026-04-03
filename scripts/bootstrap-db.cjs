@@ -43,6 +43,15 @@ function runPsql(cmd, opts = {}) {
   }
 }
 
+function psqlOutput(args, opts = {}) {
+  const psql = process.env.PSQL_PATH || 'psql';
+  try {
+    return execFileSync(psql, args, { env: process.env, encoding: 'utf8' });
+  } catch (err) {
+    return '';
+  }
+}
+
 function main() {
   const databaseUrl = parseEnv();
   const { user, password, host, port, database } = parseDatabaseUrl(databaseUrl);
@@ -54,13 +63,23 @@ function main() {
   // Set PGPASSWORD so psql can use the password if needed
   process.env.PGPASSWORD = password;
 
-  console.log('Creating role if it does not exist:', user);
-  const roleSql = `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${user}') THEN CREATE ROLE "${user}" WITH LOGIN PASSWORD '${password}'; END IF; END $$;`;
-  runPsql(roleSql, { host, port, connectDb: 'postgres' });
+  console.log('Ensuring role exists:', user);
+  const roleCheck = psqlOutput(['-h', host, '-p', String(port), '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='${user}';`]);
+  if (!roleCheck || !roleCheck.trim()) {
+    console.log('Creating role:', user);
+    runPsql(`CREATE ROLE "${user}" WITH LOGIN PASSWORD '${password}';`, { host, port, connectDb: 'postgres' });
+  } else {
+    console.log('Role already exists:', user);
+  }
 
-  console.log('Creating database if it does not exist:', database);
-  const dbSql = `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_database WHERE datname='${database}') THEN CREATE DATABASE "${database}" OWNER "${user}"; END IF; END $$;`;
-  runPsql(dbSql, { host, port, connectDb: 'postgres' });
+  console.log('Ensuring database exists:', database);
+  const dbCheck = psqlOutput(['-h', host, '-p', String(port), '-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname='${database}';`]);
+  if (!dbCheck || !dbCheck.trim()) {
+    console.log('Creating database:', database);
+    runPsql(`CREATE DATABASE "${database}" OWNER "${user}";`, { host, port, connectDb: 'postgres' });
+  } else {
+    console.log('Database already exists:', database);
+  }
 
   console.log('Bootstrap complete.');
 }
