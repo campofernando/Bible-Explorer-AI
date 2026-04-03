@@ -153,6 +153,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      lightningcss-wasm:
+        specifier: ^1.32.0
+        version: 1.32.0
     devDependencies:
       prettier:
         specifier: ^3.8.1
@@ -3985,6 +3989,12 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [glibc]
+
+  lightningcss-wasm@1.32.0:
+    resolution: {integrity: sha512-SteAkCtRuSCDYPGHKhLV/dDs5Bk+7I4QUxWxfk4xwsTI1rQk8MQyYtpGcd3NECsUGzK0q2/KqoVS+YHCqKHUTQ==}
+    engines: {node: '>= 12.0.0'}
+    bundledDependencies:
+      - napi-wasm
 
   lightningcss@1.31.1:
     resolution: {integrity: sha512-l51N2r93WmGUye3WuFoN5k10zyvrVs0qfKBhyC5ogUQ6Ew6JUSswh78mbSO+IU3nTWsyOArqPCcShdQSadghBQ==}
@@ -9783,6 +9793,8 @@ snapshots:
 
   lightningcss-linux-x64-gnu@1.31.1:
     optional: true
+
+  lightningcss-wasm@1.32.0: {}
 
   lightningcss@1.31.1:
     dependencies:

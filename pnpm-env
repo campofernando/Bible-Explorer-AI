@@ -9,6 +9,9 @@ if [ -f .env ]; then
   set +a
 fi
 
+# Prefer wasm CSS transformer if native binary unavailable
+export CSS_TRANSFORMER_WASM=1
+
 if [ $# -eq 0 ]; then
   echo "Usage: pnpm-env <pnpm-args...>"
   exit 1
