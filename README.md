@@ -264,3 +264,88 @@ Wait 15–20 seconds for the JavaScript bundle to compile on first load. Subsequ
 
 **Port already in use**
 Kill the process on the port: `lsof -ti:8080 | xargs kill` (API) or `lsof -ti:18115 | xargs kill` (mobile).
+
+---
+
+## Building for Android & iOS
+
+Below are concise, repeatable options to produce developer and production builds.
+
+1) Quick dev (Expo Go)
+
+- Purpose: fast feedback on a real device or simulator.
+- Run from the repo root (loads `.env` via the `env:*` scripts):
+
+```bash
+pnpm run env:mobile-dev
+# In Expo Dev Tools: choose "Run on Android device/emulator" or "Run on iOS simulator"
+# Or open Expo Go on your phone and scan the QR code
+```
+
+Notes: this is for development only — it does not produce an APK/IPA.
+
+2) Production / QA builds (EAS Build) — recommended for release
+
+- Purpose: signed AAB/APK (Android) and IPA (iOS) for TestFlight / Play Store.
+- Prereqs: Expo account, Apple Developer account (for iOS), `eas-cli`.
+
+```bash
+# install EAS CLI
+npm install -g eas-cli
+
+# login and configure project
+eas login
+cd artifacts/mobile
+eas build:configure
+
+# Android production AAB
+eas build -p android --profile production
+
+# iOS production IPA
+eas build -p ios --profile production
+```
+
+After the build finishes, download artifacts from the returned URL or via `eas build:view <build-id>`.
+
+To install an APK on a connected Android device:
+
+```bash
+adb install path/to/app-release.apk
+```
+
+3) Local native builds (Android Studio / Xcode)
+
+- Purpose: full control and native debugging (useful for native modules or local signing).
+
+Android (local):
+```bash
+cd artifacts/mobile
+expo prebuild --platform android
+# open the generated Android project in Android Studio
+open android
+# from Android Studio run on emulator/device or use CLI
+npx react-native run-android
+```
+
+iOS (local/macOS):
+```bash
+cd artifacts/mobile
+expo prebuild --platform ios
+cd ios
+pod install
+open *.xcworkspace
+# build/run from Xcode (select simulator or connected device)
+```
+
+Notes:
+- For Apple Silicon Macs you may need `arch -x86_64 pod install` in `ios/` if some pods require Intel builds.
+- Ensure `ios.bundleIdentifier` / `android.package` are set in `app.json` before building.
+
+4) Troubleshooting specific issues
+
+- `.env` loading: use the wrapper scripts `pnpm run env:api-dev` and `pnpm run env:mobile-dev` to ensure `DATABASE_URL`, `EXPO_PUBLIC_DOMAIN`, and other env vars are available to the process.
+- `lightningcss` native binary errors: we set `CSS_TRANSFORMER_WASM=1` in `pnpm-env` so the wasm fallback is preferred when a platform binary is not available.
+- CocoaPods problems: run `pod install` from `ios/`, use Rosetta on Apple Silicon if necessary.
+- Signing: EAS can manage signing keys/certificates for you; for local Xcode builds configure a Team and provisioning profile in Xcode.
+
+If you'd like, I can start an `eas build` for a chosen platform now (requires Expo login), or run a local `expo prebuild` + open in Xcode/Android Studio—which would you prefer?
