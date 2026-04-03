@@ -26,7 +26,13 @@ import { useBibleChapter } from "@/hooks/useBibleChapter";
 import { TranslationPicker } from "@/components/TranslationPicker";
 import { createOpenaiConversation } from "@workspace/api-client-react";
 
-const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
+// Build API_BASE from EXPO_PUBLIC_DOMAIN. If the env includes a protocol, use it
+// as-is. Otherwise default to HTTP in development and HTTPS in production.
+declare const __DEV__: boolean;
+const _rawExpoDomain = process.env.EXPO_PUBLIC_DOMAIN;
+const API_BASE = _rawExpoDomain.match(/^https?:\/\//)
+  ? _rawExpoDomain
+  : `${__DEV__ ? "http" : "https"}://${_rawExpoDomain}`;
 
 type ContextMenuState = { visible: boolean; verse: BibleVerse | null };
 
