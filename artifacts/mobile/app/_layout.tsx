@@ -17,13 +17,8 @@ import { setBaseUrl } from "@workspace/api-client-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookmarksProvider } from "@/context/BookmarksContext";
 import { TranslationProvider } from "@/context/TranslationContext";
-// Build API_BASE from EXPO_PUBLIC_DOMAIN. If the env includes a protocol, use it
-// as-is. Otherwise default to HTTP in development and HTTPS in production.
-declare const __DEV__: boolean;
-const _rawExpoDomain = process.env.EXPO_PUBLIC_DOMAIN;
-const API_BASE = _rawExpoDomain.match(/^https?:\/\//)
-  ? _rawExpoDomain
-  : `${__DEV__ ? "http" : "https"}://${_rawExpoDomain}`;
+import { API_BASE } from "@/constants/environment";
+
 setBaseUrl(`${API_BASE}`);
 
 SplashScreen.preventAutoHideAsync();

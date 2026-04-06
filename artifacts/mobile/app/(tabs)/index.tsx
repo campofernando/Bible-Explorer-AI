@@ -17,16 +17,9 @@ import Colors from "@/constants/colors";
 import { BIBLE_BOOKS } from "@/constants/bible";
 import { useTranslation } from "@/context/TranslationContext";
 import { TranslationPicker } from "@/components/TranslationPicker";
+import { API_BASE } from "@/constants/environment";
 
 const TESTAMENT_TABS = ["Old Testament", "New Testament"] as const;
-// Build API_BASE from EXPO_PUBLIC_DOMAIN. If the env includes a protocol, use it
-// as-is. Otherwise default to HTTP in development and HTTPS in production.
-declare const __DEV__: boolean;
-const _rawExpoDomain = process.env.EXPO_PUBLIC_DOMAIN;
-const API_BASE = _rawExpoDomain.match(/^https?:\/\//)
-  ? _rawExpoDomain
-  : `${__DEV__ ? "http" : "https"}://${_rawExpoDomain}`;
-// const API_BASE = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -52,10 +45,6 @@ export default function HomeScreen() {
   );
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
-
-  console.log("API_BASE", `${API_BASE}`);
-  console.log("_rawExpoDomain: ", `${_rawExpoDomain}`);
-  console.log("EXPO_PUBLIC_DOMAIN: ", `${process.env.EXPO_PUBLIC_DOMAIN}`);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
